@@ -434,8 +434,8 @@ export function setupPlaidAuthServer(server: McpServer) {
 
   // Resource: Get stored Auth data for a user
   server.resource(
-    "webhook-events",
-    "webhook-events://{userId}",
+    "webhook-events-auth",
+  "webhook-events-auth://{userId}",  
     async (uri, extra) => {
       // Extract userId from the URL pathname
       const urlPathParts = uri.pathname.split('/');

@@ -689,8 +689,8 @@ export function setupPlaidTransactionsServer(server: McpServer) {
 
   // Resource: Get stored transactions for a user
   server.resource(
-    "webhook-events",
-    "webhook-events://{userId}",
+    "webhook-events-transactions",  
+    "webhook-events-transactions://{userId}",  
     async (uri, extra) => {
       // Extract userId from the URL pathname
       const urlPathParts = uri.pathname.split('/');
