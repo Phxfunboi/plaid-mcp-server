@@ -739,8 +739,8 @@ export function setupPlaidTransactionsServer(server: McpServer) {
 
   // Resource: Get refresh settings for a user
   server.resource(
-    "webhook-events",
-    "webhook-events://{userId}",
+    "webhook-events-refresh",
+    "webhook-events-refresh://{userId}",
     async (uri, extra) => {
       // Extract userId from the URL pathname
       const urlPathParts = uri.pathname.split('/');
