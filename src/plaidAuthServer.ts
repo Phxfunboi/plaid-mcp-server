@@ -1,7 +1,16 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { Configuration, PlaidApi, PlaidEnvironments, Products } from 'plaid';
 import dotenv from 'dotenv';
+import { 
+  Configuration, 
+  PlaidApi, 
+  Products, 
+  CountryCode, 
+  LinkTokenCreateRequest,
+  PlaidEnvironments,
+  ItemPublicTokenExchangeRequest,
+  AuthGetRequest
+} from 'plaid';
 
 // Load environment variables
 dotenv.config();
@@ -51,16 +60,16 @@ export function setupPlaidAuthServer(server: McpServer) {
     async ({ userId, redirectUri }) => {
       try {
         // List of Plaid products to initialize
-        const products: Products[] = ['auth'];
+        const products: Products[] = [Products.Auth];
         
         // Prepare link token request
-        const request = {
+        const request: LinkTokenCreateRequest = {
           user: { client_user_id: userId },
-          client_name: process.env.PLAID_CLIENT_NAME || "Your App Name",
+          client_name: 'MCP Plaid App',
           products: products,
-          country_codes: ['US'],
+          country_codes: [CountryCode.Us],
           language: 'en',
-          webhook: process.env.PLAID_WEBHOOK_URL,
+          webhook: process.env.WEBHOOK_URL
         };
 
         // Add redirect URI if provided
@@ -425,11 +434,14 @@ export function setupPlaidAuthServer(server: McpServer) {
 
   // Resource: Get stored Auth data for a user
   server.resource(
-    "auth-data",
-    "auth-data://{userId}",
-    async (uri, params) => {
-      const { userId } = params;
+    "webhook-events",
+    "webhook-events://{userId}",
+    async (uri, extra) => {
+      // Extract userId from the URL pathname
+      const urlPathParts = uri.pathname.split('/');
+      const userId = urlPathParts[urlPathParts.length - 1];
       
+      // Now use userId safely
       if (!userData.plaidAccessTokens[userId]) {
         return {
           contents: [{
@@ -462,9 +474,12 @@ export function setupPlaidAuthServer(server: McpServer) {
   server.resource(
     "webhook-events",
     "webhook-events://{userId}",
-    async (uri, params) => {
-      const { userId } = params;
+    async (uri, extra) => {
+      // Extract userId from the URL pathname
+      const urlPathParts = uri.pathname.split('/');
+      const userId = urlPathParts[urlPathParts.length - 1];
       
+      // Now use userId safely
       if (!userData.plaidAccessTokens[userId]) {
         return {
           contents: [{

@@ -1,8 +1,18 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { Configuration, PlaidApi, PlaidEnvironments, Products } from 'plaid';
 import dotenv from 'dotenv';
 import cron from 'node-cron';
+import {
+  Configuration,
+  PlaidApi,
+  Products,
+  CountryCode,
+  LinkTokenCreateRequest,
+  ItemPublicTokenExchangeRequest,
+  TransactionsGetRequest,
+  PlaidEnvironments,
+  DepositoryAccountSubtype
+} from 'plaid';
 
 // Load environment variables
 dotenv.config();
@@ -23,6 +33,8 @@ interface UserData {
   }>;
   webhookData: Record<string, any[]>;
 }
+
+
 
 const userData: UserData = {
   plaidAccessTokens: {},
@@ -70,21 +82,21 @@ export function setupPlaidTransactionsServer(server: McpServer) {
         const products: Products[] = [];
         
         if (includeAuth) {
-          products.push('auth');
+          products.push(Products.Auth);
         }
         
         if (includeTransactions) {
-          products.push('transactions');
+          products.push(Products.Transactions);
         }
         
         // Prepare link token request
-        const request: any = {
+        const request: LinkTokenCreateRequest = {
           user: { client_user_id: userId },
-          client_name: process.env.PLAID_CLIENT_NAME || "Your App Name",
+          client_name: 'MCP Plaid Transactions App',
           products: products,
-          country_codes: ['US'],
+          country_codes: [CountryCode.Us],
           language: 'en',
-          webhook: process.env.PLAID_WEBHOOK_URL,
+          webhook: process.env.WEBHOOK_URL,
         };
 
         // Add transactions options if needed
@@ -98,7 +110,10 @@ export function setupPlaidTransactionsServer(server: McpServer) {
         if (includeBankTransfers) {
           request.account_filters = {
             depository: {
-              account_subtypes: ['checking', 'savings']
+              account_subtypes: [
+                DepositoryAccountSubtype.Checking,
+                DepositoryAccountSubtype.Savings
+              ]
             }
           };
         }
@@ -674,11 +689,14 @@ export function setupPlaidTransactionsServer(server: McpServer) {
 
   // Resource: Get stored transactions for a user
   server.resource(
-    "transactions",
-    "transactions://{userId}",
-    async (uri, params) => {
-      const { userId } = params;
+    "webhook-events",
+    "webhook-events://{userId}",
+    async (uri, extra) => {
+      // Extract userId from the URL pathname
+      const urlPathParts = uri.pathname.split('/');
+      const userId = urlPathParts[urlPathParts.length - 1];
       
+      // Now use userId safely
       if (!userData.plaidAccessTokens[userId]) {
         return {
           contents: [{
@@ -721,11 +739,14 @@ export function setupPlaidTransactionsServer(server: McpServer) {
 
   // Resource: Get refresh settings for a user
   server.resource(
-    "refresh-settings",
-    "refresh-settings://{userId}",
-    async (uri, params) => {
-      const { userId } = params;
+    "webhook-events",
+    "webhook-events://{userId}",
+    async (uri, extra) => {
+      // Extract userId from the URL pathname
+      const urlPathParts = uri.pathname.split('/');
+      const userId = urlPathParts[urlPathParts.length - 1];
       
+      // Now use userId safely
       if (!userData.plaidAccessTokens[userId]) {
         return {
           contents: [{
@@ -760,9 +781,12 @@ export function setupPlaidTransactionsServer(server: McpServer) {
   server.resource(
     "webhook-events",
     "webhook-events://{userId}",
-    async (uri, params) => {
-      const { userId } = params;
+    async (uri, extra) => {
+      // Extract userId from the URL pathname
+      const urlPathParts = uri.pathname.split('/');
+      const userId = urlPathParts[urlPathParts.length - 1];
       
+      // Now use userId safely
       if (!userData.plaidAccessTokens[userId]) {
         return {
           contents: [{
