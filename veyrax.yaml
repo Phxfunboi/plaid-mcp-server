@@ -1,9 +1,17 @@
-name: VeyraX
-description: "Single MCP tool to connect 100+ tools: Gmail, Calendar and more."
-base_image: node:22.14.0-alpine
-project_directory: /app
-install_command: npm install
-build_command: npm run build
-start_command: node dist/index.js
-env:
-  VEYRAX_API_KEY: config.VEYRAX_API_KEY
+services:
+  app:
+    build:
+      context: .
+      # Optionally specify a Dockerfile or buildpack here
+      # dockerfile: Dockerfile
+      # buildpack: nodejs
+    run: npm start
+    ports:
+      - 3001:3001
+    env:
+      PORT: 3001
+      PLAID_ENV: sandbox
+      WEBHOOK_URL: your_webhook_url
+      PLAID_SECRET: your_plaid_secret
+      ALLOWED_ORIGINS: http://localhost:3000
+      PLAID_CLIENT_ID: your_plaid_client_id
